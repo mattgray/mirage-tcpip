@@ -422,6 +422,7 @@ module Tx (Time:Mirage_time_lwt.S) (Clock:Mirage_clock.MCLOCK) = struct
   let output ?(flags=No_flags) ?(options=[]) (T q) data =
     (* Transmit the packet to the wire
          TODO: deal with transmission soft/hard errors here RFC5461 *)
+    Logs.warn (fun f -> f "Tx.output %a" Cstruct.hexdump_pp data);
     let { wnd; _ } = q in
     let ack = Window.rx_nxt wnd in
     let seq = Window.tx_nxt wnd in

@@ -366,6 +366,7 @@ struct
     Stats.incr_channel ();
     STATE.tick pcb.state (State.Recv_synack ack_number);
     (* xmit ACK *)
+    Logs.warn (fun f -> f "but do we really xmit acks?");
     TXS.output pcb.txq (Cstruct.create 0) >>= fun () ->
     Lwt.return (pcb, th)
 
@@ -404,6 +405,7 @@ struct
     Logs.(log_with_stats Debug "process-synack" t);
     match hashtbl_find t.connects id with
     | Some (wakener, tx_isn) ->
+      Logs.warn (fun f -> f "found in connects");
       if is_correct_ack ~tx_isn ~ack_number then (
         Hashtbl.remove t.connects id;
         Stats.decr_connect ();

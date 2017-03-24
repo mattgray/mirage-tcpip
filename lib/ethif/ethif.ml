@@ -42,6 +42,7 @@ module Make(Netif : Mirage_net_lwt.S) = struct
   let mtu t = t.mtu
 
   let input ~arpv4 ~ipv4 ~ipv6 t frame =
+    Log.warn (fun f -> f "raw: %a" Cstruct.hexdump_pp frame);
     let open Ethif_packet in
     MProf.Trace.label "ethif.input";
     let of_interest dest =
@@ -49,6 +50,8 @@ module Make(Netif : Mirage_net_lwt.S) = struct
     in
     match Unmarshal.of_cstruct frame with
     | Ok (header, payload) when of_interest header.destination ->
+      Log.warn (fun f -> f "header: %a" Ethif_packet.pp header);
+      Log.warn (fun f -> f "content: %a" Cstruct.hexdump_pp payload);
       begin
         let open Ethif_wire in
         match header.ethertype with
@@ -62,6 +65,9 @@ module Make(Netif : Mirage_net_lwt.S) = struct
       Lwt.return_unit
 
   let write t frame =
+    (match Ethif_packet.Unmarshal.of_cstruct frame with
+    | Ok (h, p) -> Log.warn (fun f -> f "h: %a" Ethif_packet.pp h); Log.warn (fun f -> f "p: %a" Cstruct.hexdump_pp p)
+    | Error s -> Log.warn (fun f -> f "error: %s" s));
     MProf.Trace.label "ethif.write";
     Netif.write t.netif frame >|= function
     | Ok () -> Ok ()
@@ -70,6 +76,7 @@ module Make(Netif : Mirage_net_lwt.S) = struct
       Error e
 
   let writev t bufs =
+    List.iteri (fun i buf -> Log.warn (fun f -> f "writev %d: %a" (List.length bufs) Cstruct.hexdump_pp buf)) bufs;
     MProf.Trace.label "ethif.writev";
     Netif.writev t.netif bufs >|= function
     | Ok () -> Ok ()
